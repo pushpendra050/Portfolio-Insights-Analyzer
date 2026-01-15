@@ -1,6 +1,5 @@
 # Output files
-insight.txt
-graphs/
+
 
 # Python
 __pycache__/

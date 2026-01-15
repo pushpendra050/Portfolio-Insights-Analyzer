@@ -1,7 +1,7 @@
 
 ================================================================================
            PORTFOLIO INSIGHTS ANALYZER
-           Generated on: 2025-12-26 17:41:39
+           Generated on: 2026-01-15 16:31:16
 ================================================================================
 
 Loading portfolio_data.csv...
@@ -13,11 +13,7 @@ Loaded 87 months of data.
 
   Investment Period:    Oct 2017 to Dec 2024
   Duration:             87 months (7.2 years)
-  Starting Value:       Rs.52,340.00
   Current Value:        Rs.1,268,500.00
-  Total Value Change:   Rs.1,216,160.00
-  All-Time High:        Rs.1,268,500.00
-  All-Time Low:         Rs.52,340.00
 
 ================================================================================
   YEAR-WISE PORTFOLIO SUMMARY
@@ -26,13 +22,13 @@ Loaded 87 months of data.
 Year      Start Value      End Value     YoY Growth  Avg Monthly  +ve/-ve
 ---------------------------------------------------------------------------
 2017   Rs.     52,340 Rs.     61,450 Rs.      9,110 Rs.   20,483   2/0  
-2018   Rs.     72,350 Rs.     95,400 Rs.     33,950 Rs.    2,829   8/4  
-2019   Rs.    102,500 Rs.    151,200 Rs.     55,800 Rs.    4,650   9/3  
-2020   Rs.    162,500 Rs.    248,200 Rs.     97,000 Rs.    8,083   9/3  
-2021   Rs.    265,800 Rs.    445,800 Rs.    197,600 Rs.   16,467  10/2  
-2022   Rs.    468,500 Rs.    568,500 Rs.    122,700 Rs.   10,225   8/4  
-2023   Rs.    598,200 Rs.    845,600 Rs.    277,100 Rs.   23,092   9/3  
-2024   Rs.    892,500 Rs.  1,268,500 Rs.    422,900 Rs.   35,242  10/2  
+2018   Rs.     61,450 Rs.     95,400 Rs.     33,950 Rs.    2,829   8/4  
+2019   Rs.     95,400 Rs.    151,200 Rs.     55,800 Rs.    4,650   9/3  
+2020   Rs.    151,200 Rs.    248,200 Rs.     97,000 Rs.    8,083   9/3  
+2021   Rs.    248,200 Rs.    445,800 Rs.    197,600 Rs.   16,467  10/2  
+2022   Rs.    445,800 Rs.    568,500 Rs.    122,700 Rs.   10,225   8/4  
+2023   Rs.    568,500 Rs.    845,600 Rs.    277,100 Rs.   23,092   9/3  
+2024   Rs.    845,600 Rs.  1,268,500 Rs.    422,900 Rs.   35,242  10/2  
 
 ---------------------------------------------------------------------------
 BEST & WORST MONTHS PER YEAR:
@@ -68,21 +64,35 @@ NEXT MILESTONE: Rs.1,500,000
   PORTFOLIO MILESTONES (Every 1 Lakh)
 ================================================================================
 
-   Milestone Date Reached    Note                
---------------------------------------------------
-Rs.       1L   Jan 2019                            
-Rs.       2L   Nov 2020                            
-Rs.       3L   May 2021                            
-Rs.       4L   Oct 2021                            
-Rs.       5L   Oct 2022                            
-Rs.       6L   Mar 2023                            
-Rs.       7L   Jun 2023                            
-Rs.       8L   Dec 2023                            
-Rs.       9L   Feb 2024                            
-Rs.      10L   Apr 2024                            
-Rs.      11L   Jul 2024                            
-Rs.      12L   Nov 2024                            
+   Milestone Date Reached    Months Taken    Note                
+-----------------------------------------------------------------
+Rs.       1L   Jan 2019        15 months                           
+Rs.       2L   Nov 2020        22 months                           
+Rs.       3L   May 2021        6 months                            
+Rs.       4L   Oct 2021        5 months                            
+Rs.       5L   Oct 2022        12 months                           
+Rs.       6L   Mar 2023        5 months                            
+Rs.       7L   Jun 2023        3 months                            
+Rs.       8L   Dec 2023        6 months                            
+Rs.       9L   Feb 2024        2 months                            
+Rs.      10L   Apr 2024        2 months                            
+Rs.      11L   Jul 2024        3 months                            
+Rs.      12L   Nov 2024        4 months                            
 Rs.      13L   Not yet reached
+
+-----------------------------------------------------------------
+AVERAGE SPEED / PACE ANALYSIS:
+-----------------------------------------------------------------
+  Overall Average: 6.4 months per lakh
+  Fastest 1L increment: 2 months (reaching Rs.9L)
+  Slowest 1L increment: 22 months (reaching Rs.2L)
+
+  PACE BY 5L INTERVALS:
+    1L-5L: 12.0 months/lakh avg
+    6L-10L: 3.6 months/lakh avg
+    11L-12L: 3.5 months/lakh avg
+
+  >> Wealth building ACCELERATING by 71%! (Compounding effect)
 
 ================================================================================
   PORTFOLIO VALUE CHANGES OVER TIME
@@ -90,6 +100,7 @@ Rs.      13L   Not yet reached
 
 NOTE: These are portfolio VALUE changes, not investment returns.
       Value changes include new investments + market movements.
+      This shows how the portfolio has changed in the last period.
 
 As of: December 2024
 Current Portfolio Value: Rs.1,268,500.00
@@ -102,7 +113,7 @@ Period                   Value Then      Value Now         Change
 1 Year               Rs.    845,600 Rs.  1,268,500 Rs.    422,900
 2 Years              Rs.    568,500 Rs.  1,268,500 Rs.    700,000
 3 Years              Rs.    445,800 Rs.  1,268,500 Rs.    822,700
-Since Inception      Rs.     52,340 Rs.  1,268,500 Rs.  1,216,160
+5 Years              Rs.    151,200 Rs.  1,268,500 Rs.  1,117,300
 
 ================================================================================
   QUARTERLY ANALYSIS
@@ -147,6 +158,9 @@ WORST QUARTER: 2022-Q2 (Rs.-33,000, -9.93%)
 ================================================================================
   MONTHLY SEASONALITY ANALYSIS
 ================================================================================
+
+NOTE: Win Rate represents the percentage of months with positive returns.
+      Outliers >50% have been excluded from average calculations to avoid distortion from early small portfolio values.
 
 Month     Avg %   Win Rate       Best      Worst      Avg Rs.
 ------------------------------------------------------------
@@ -348,6 +362,7 @@ Generating graphs...
   [OK] 07b_return_distribution_by_year.png
   [OK] 07c_positive_negative_months.png
   [OK] 08_milestones.png
+  [OK] 08b_milestones_1L.png
   [OK] 09_top_months.png
   [OK] 10_yoy_month_comparison.png
   [OK] 11_recovery_periods.png

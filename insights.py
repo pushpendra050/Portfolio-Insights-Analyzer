@@ -100,7 +100,7 @@ def plot_portfolio_growth(df):
         if df['Consolidated_portfolio_Value'].max() >= milestone:
             ax.axhline(y=milestone, color='gray', linestyle='--', alpha=0.5, linewidth=1)
             ax.text(df['Date'].iloc[0], milestone, f' Rs.{milestone/100000:.0f}L',
-                   va='bottom', ha='left', fontsize=11, color='gray')
+                   va='bottom', ha='left', fontsize=14, color='gray')
 
     ax.set_title('Portfolio Value Over Time', fontsize=20, fontweight='bold')
     ax.set_xlabel('Date')
@@ -290,7 +290,7 @@ def plot_monthly_seasonality(df):
             val = pivot.values[i, j]
             if not np.isnan(val):
                 text_color = 'white' if abs(val) > 5 else 'black'
-                ax.text(j, i, f'{val:.1f}', ha='center', va='center', fontsize=11, color=text_color)
+                ax.text(j, i, f'{val:.1f}', ha='center', va='center', fontsize=14, color=text_color)
 
     plt.tight_layout()
     plt.savefig(f'{GRAPH_DIR}/05a_monthly_heatmap.png', dpi=300, bbox_inches='tight')
@@ -304,13 +304,17 @@ def plot_avg_monthly_returns(df):
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Average returns by month
-    monthly_avg = df.groupby('Month')['Percentage_Change'].mean().reindex(month_order)
+    # Filter outliers >50%
+    OUTLIER_THRESHOLD = 50.0
+    df_filtered = df[df['Percentage_Change'] <= OUTLIER_THRESHOLD].copy()
+
+    # Average returns by month (using filtered data)
+    monthly_avg = df_filtered.groupby('Month')['Percentage_Change'].mean().reindex(month_order)
     colors = ['#28A745' if x >= 0 else '#DC3545' for x in monthly_avg.values]
     bars = ax.bar(month_order, monthly_avg.values, color=colors, alpha=0.8)
 
     ax.axhline(y=0, color='black', linewidth=0.5)
-    ax.set_title('Average Monthly Returns (%)', fontsize=20, fontweight='bold')
+    ax.set_title('Average Monthly Returns (%) - Outliers >50% Excluded', fontsize=20, fontweight='bold')
     ax.set_xlabel('Month')
     ax.set_ylabel('Average Return (%)')
     plt.xticks(rotation=45)
@@ -323,7 +327,7 @@ def plot_avg_monthly_returns(df):
                     xytext=(0, 3 if height >= 0 else -12),
                     textcoords="offset points",
                     ha='center', va='bottom' if height >= 0 else 'top',
-                    fontsize=12, fontweight='bold')
+                    fontsize=14, fontweight='bold')
 
     plt.tight_layout()
     plt.savefig(f'{GRAPH_DIR}/05b_avg_monthly_returns.png', dpi=300, bbox_inches='tight')
@@ -363,8 +367,12 @@ def plot_volatility_distribution(df):
     """Generate volatility and return distribution charts (histogram and rolling volatility)"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-    # Histogram of monthly returns
-    n, bins, patches = ax1.hist(df['Percentage_Change'], bins=20, color='#2E86AB', alpha=0.7, edgecolor='white')
+    # Filter outliers >50% for histogram only
+    OUTLIER_THRESHOLD = 50.0
+    df_filtered = df[df['Percentage_Change'] <= OUTLIER_THRESHOLD].copy()
+
+    # Histogram of monthly returns (using filtered data)
+    n, bins, patches = ax1.hist(df_filtered['Percentage_Change'], bins=20, color='#2E86AB', alpha=0.7, edgecolor='white')
 
     # Color negative bins
     for i, patch in enumerate(patches):
@@ -372,13 +380,15 @@ def plot_volatility_distribution(df):
             patch.set_facecolor('#DC3545')
 
     ax1.axvline(x=0, color='black', linewidth=1)
-    ax1.axvline(x=df['Percentage_Change'].mean(), color='#FFC107', linewidth=2, linestyle='--', label=f"Mean: {df['Percentage_Change'].mean():.1f}%")
-    ax1.set_title('Distribution of Monthly Returns', fontsize=18, fontweight='bold')
+    # Calculate mean from filtered data
+    filtered_mean = df_filtered['Percentage_Change'].mean()
+    ax1.axvline(x=filtered_mean, color='#FFC107', linewidth=2, linestyle='--', label=f"Mean: {filtered_mean:.1f}%")
+    ax1.set_title('Distribution of Monthly Returns (Outliers >50% Excluded)', fontsize=18, fontweight='bold')
     ax1.set_xlabel('Monthly Return (%)')
     ax1.set_ylabel('Frequency')
     ax1.legend()
 
-    # Rolling volatility (12-month)
+    # Rolling volatility (12-month) - KEEP UNCHANGED, use all data
     rolling_std = df['Percentage_Change'].rolling(window=12).std()
     ax2.plot(df['Date'], rolling_std, linewidth=2, color='#E74C3C')
     ax2.fill_between(df['Date'], rolling_std, alpha=0.3, color='#E74C3C')
@@ -395,36 +405,13 @@ def plot_volatility_distribution(df):
 
 
 def plot_return_distribution_by_year(df):
-    """Generate return distribution by year (box plot) - Auto-excludes first year if it has high outliers"""
+    """Generate return distribution by year (box plot) - excluding partial years with <6 months"""
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    all_years = sorted(df['Year'].unique())
-    excluded_year = None
-    title_suffix = ""
-
-    # Check if first year has high outliers compared to other years
-    if len(all_years) > 2:
-        first_year = all_years[0]
-        first_year_data = df[df['Year'] == first_year]['Percentage_Change']
-        other_years_data = df[df['Year'] != first_year]['Percentage_Change']
-
-        # Calculate statistics
-        first_year_std = first_year_data.std()
-        first_year_range = first_year_data.max() - first_year_data.min()
-        other_years_std = other_years_data.std()
-        other_years_range = other_years_data.max() - other_years_data.min()
-
-        # If first year has significantly higher volatility (1.5x threshold), exclude it
-        if first_year_std > 1.5 * other_years_std or first_year_range > 1.5 * other_years_range:
-            excluded_year = first_year
-            title_suffix = f" (Excluding {int(first_year)})"
-
-    # Filter data
-    if excluded_year is not None:
-        df_filtered = df[df['Year'] != excluded_year]
-    else:
-        df_filtered = df
-
+    # Filter out partial years with <6 months of data to avoid outliers
+    year_counts = df.groupby('Year').size()
+    full_years = year_counts[year_counts >= 6].index
+    df_filtered = df[df['Year'].isin(full_years)]
     years = sorted(df_filtered['Year'].unique())
     data_by_year = [df_filtered[df_filtered['Year'] == year]['Percentage_Change'].values for year in years]
     bp = ax.boxplot(data_by_year, labels=[str(int(y)) for y in years], patch_artist=True)
@@ -434,7 +421,7 @@ def plot_return_distribution_by_year(df):
         patch.set_alpha(0.7)
 
     ax.axhline(y=0, color='gray', linewidth=0.5, linestyle='--')
-    ax.set_title(f'Return Distribution by Year{title_suffix}', fontsize=20, fontweight='bold')
+    ax.set_title('Return Distribution by Year (Excluding Partial Years <6 Months)', fontsize=20, fontweight='bold')
     ax.set_xlabel('Year')
     ax.set_ylabel('Monthly Return (%)')
 
@@ -522,7 +509,8 @@ def plot_top_months(df):
     ax1.xaxis.set_major_formatter(FuncFormatter(format_lakhs))
 
     for i, (_, row) in enumerate(best.iterrows()):
-        ax1.text(row['Change'] + 1000, i, f"Rs.{row['Change']:,.0f}", va='center', fontsize=11)
+        # Text inside the bar, left-aligned, white color
+        ax1.text(5000, i, f"{row['Change']/100000:.2f}L", va='center', ha='left', fontsize=14, fontweight='bold', color='white')
 
     # Top 10 worst months
     worst = df.nsmallest(10, 'Change')[['Month', 'Year', 'Change']].copy()
@@ -535,10 +523,105 @@ def plot_top_months(df):
     ax2.xaxis.set_major_formatter(FuncFormatter(format_lakhs))
 
     for i, (_, row) in enumerate(worst.iterrows()):
-        ax2.text(row['Change'] - 1000, i, f"Rs.{row['Change']:,.0f}", va='center', ha='right', fontsize=11)
+        # Text inside the bar, right-aligned, white color
+        ax2.text(row['Change'] + 1000, i, f"{row['Change']/100000:.2f}L", va='center', ha='left', fontsize=14, fontweight='bold', color='white')
 
     plt.tight_layout()
     plt.savefig(f'{GRAPH_DIR}/09_top_months.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+
+def plot_milestones_1L(df):
+    """Generate 1 Lakh milestones timeline chart with months taken"""
+    current_value = df['Consolidated_portfolio_Value'].iloc[-1]
+    max_milestone = int((current_value // 100000) + 1) * 100000
+    milestones = list(range(100000, max_milestone + 1, 100000))
+
+    # Collect milestone data
+    milestone_data = []
+    prev_cross_date = None
+    start_date = df['Date'].iloc[0]
+
+    for milestone in milestones:
+        crossed = df[df['Consolidated_portfolio_Value'] >= milestone]
+        if len(crossed) > 0:
+            cross_date = crossed['Date'].iloc[0]
+
+            if prev_cross_date is None:
+                months_taken = (cross_date.year - start_date.year) * 12 + (cross_date.month - start_date.month)
+            else:
+                months_taken = (cross_date.year - prev_cross_date.year) * 12 + (cross_date.month - prev_cross_date.month)
+
+            milestone_data.append({
+                'milestone': milestone,
+                'date': cross_date,
+                'months_taken': months_taken
+            })
+            prev_cross_date = cross_date
+
+    if len(milestone_data) == 0:
+        return
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [2, 1]})
+
+    # --- Top plot: Portfolio value with 1L milestone markers ---
+    ax1.plot(df['Date'], df['Consolidated_portfolio_Value'], linewidth=2, color='#2E86AB')
+    ax1.fill_between(df['Date'], df['Consolidated_portfolio_Value'], alpha=0.2, color='#2E86AB')
+
+    # Add milestone lines and markers
+    colors = plt.cm.viridis(np.linspace(0.2, 0.8, len(milestone_data)))
+    for i, m in enumerate(milestone_data):
+        ax1.axhline(y=m['milestone'], color='gray', linestyle='--', alpha=0.3, linewidth=0.8)
+        ax1.scatter([m['date']], [m['milestone']], color=colors[i], s=80, zorder=5, marker='o', edgecolors='white', linewidths=1)
+
+        # Annotate every 2nd milestone to avoid clutter (or all if few milestones)
+        if len(milestone_data) <= 10 or i % 2 == 0:
+            ax1.annotate(f"{m['milestone']/100000:.0f}L",
+                        xy=(m['date'], m['milestone']),
+                        xytext=(5, 5), textcoords='offset points',
+                        fontsize=14, ha='left', color='#333333')
+
+    ax1.set_title('Portfolio Value with 1 Lakh Milestones', fontsize=18, fontweight='bold')
+    ax1.set_xlabel('')
+    ax1.set_ylabel('Portfolio Value (Rs.)')
+    ax1.yaxis.set_major_formatter(FuncFormatter(format_lakhs))
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+    ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
+    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+
+    # --- Bottom plot: Months taken for each milestone (bar chart) ---
+    milestone_labels = [f"{m['milestone']/100000:.0f}L" for m in milestone_data]
+    months_values = [m['months_taken'] for m in milestone_data]
+
+    # Color bars based on speed (green = fast, red = slow)
+    max_months = max(months_values) if max(months_values) > 0 else 1
+    bar_colors = ['#28A745' if m <= 2 else '#FFC107' if m <= 4 else '#DC3545' for m in months_values]
+
+    bars = ax2.bar(milestone_labels, months_values, color=bar_colors, alpha=0.8, edgecolor='white')
+
+    # Add value labels on bars
+    for bar, val in zip(bars, months_values):
+        height = bar.get_height()
+        ax2.annotate(f'{val}m',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom',
+                    fontsize=14, fontweight='bold')
+
+    ax2.set_title('Months Taken to Reach Each 1L Milestone', fontsize=16, fontweight='bold')
+    ax2.set_xlabel('Milestone')
+    ax2.set_ylabel('Months')
+    ax2.axhline(y=np.mean([m for m in months_values if m > 0]), color='#2E86AB', linestyle='--',
+                linewidth=2, label=f"Avg: {np.mean([m for m in months_values if m > 0]):.1f} months")
+    ax2.legend(loc='upper right')
+
+    # Rotate x-axis labels if many milestones
+    if len(milestone_data) > 12:
+        plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+    plt.tight_layout()
+    plt.savefig(f'{GRAPH_DIR}/08b_milestones_1L.png', dpi=300, bbox_inches='tight')
     plt.close()
 
 
@@ -582,6 +665,9 @@ def generate_all_graphs(df):
     plot_milestones(df)
     print("  [OK] 08_milestones.png")
 
+    plot_milestones_1L(df)
+    print("  [OK] 08b_milestones_1L.png")
+
     plot_top_months(df)
     print("  [OK] 09_top_months.png")
 
@@ -607,15 +693,16 @@ def yearly_summary(df):
 
     for year in sorted(years):
         year_data = df[df['Year'] == year]
-        start_value = year_data['Consolidated_portfolio_Value'].iloc[0]
         end_value = year_data['Consolidated_portfolio_Value'].iloc[-1]
 
-        # Get previous year end value for YoY calculation
+        # Get previous year's December value (last month of previous year) as start value
         prev_year_data = df[df['Year'] == year - 1]
         if len(prev_year_data) > 0:
-            prev_end = prev_year_data['Consolidated_portfolio_Value'].iloc[-1]
-            yoy_growth = end_value - prev_end
+            start_value = prev_year_data['Consolidated_portfolio_Value'].iloc[-1]  # Last value = December
+            yoy_growth = end_value - start_value
         else:
+            # For first year only (2017)
+            start_value = year_data['Consolidated_portfolio_Value'].iloc[0]
             yoy_growth = end_value - start_value
 
         # Total change during the year (sum of monthly changes)
@@ -726,7 +813,8 @@ def portfolio_value_changes(df):
     """Show portfolio value changes over different periods (NOT returns)"""
     print_header("PORTFOLIO VALUE CHANGES OVER TIME")
     print("\nNOTE: These are portfolio VALUE changes, not investment returns.")
-    print("      Value changes include new investments + market movements.\n")
+    print("      Value changes include new investments + market movements.")
+    print("      This shows how the portfolio has changed in the last period.\n")
 
     current_value = df['Consolidated_portfolio_Value'].iloc[-1]
     current_date = df['Date'].iloc[-1]
@@ -738,7 +826,7 @@ def portfolio_value_changes(df):
         ('1 Year', 12),
         ('2 Years', 24),
         ('3 Years', 36),
-        ('Since Inception', len(df) - 1)
+        ('5 Years', 60)
     ]
 
     print(f"As of: {current_date.strftime('%B %Y')}")
@@ -911,17 +999,28 @@ def monthly_seasonality(df):
     month_order = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
                    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
+    # Create filtered dataframe excluding outliers >50%
+    OUTLIER_THRESHOLD = 50.0
+    df_filtered = df[df['Percentage_Change'] <= OUTLIER_THRESHOLD].copy()
+
+    # Use original data for most stats, but filtered data for mean calculation
     monthly_stats = df.groupby('Month').agg({
-        'Percentage_Change': ['mean', 'std', 'min', 'max', 'count'],
+        'Percentage_Change': ['std', 'min', 'max', 'count'],
         'Change': ['mean', 'sum']
     })
 
-    monthly_stats.columns = ['Avg_Pct', 'Std_Pct', 'Min_Pct', 'Max_Pct', 'Count', 'Avg_Change', 'Total_Change']
+    # Calculate mean from filtered data separately
+    monthly_avg_filtered = df_filtered.groupby('Month')['Percentage_Change'].mean()
+
+    monthly_stats.columns = ['Std_Pct', 'Min_Pct', 'Max_Pct', 'Count', 'Avg_Change', 'Total_Change']
+    monthly_stats['Avg_Pct'] = monthly_avg_filtered  # USE FILTERED AVERAGE
     monthly_stats['Positive_Count'] = df.groupby('Month')['Percentage_Change'].apply(lambda x: (x > 0).sum())
     monthly_stats['Win_Rate'] = monthly_stats['Positive_Count'] / monthly_stats['Count'] * 100
 
     monthly_stats = monthly_stats.reindex(month_order)
 
+    print("\nNOTE: Win Rate represents the percentage of months with positive returns.")
+    print("      Outliers >50% have been excluded from average calculations to avoid distortion from early small portfolio values.")
     print(f"\n{'Month':<6} {'Avg %':>8} {'Win Rate':>10} {'Best':>10} {'Worst':>10} {'Avg Rs.':>12}")
     print("-" * 60)
 
@@ -931,7 +1030,7 @@ def monthly_seasonality(df):
             print(f"{month:<6} {row['Avg_Pct']:>7.2f}% {row['Win_Rate']:>9.0f}% "
                   f"{row['Max_Pct']:>9.1f}% {row['Min_Pct']:>9.1f}% Rs.{row['Avg_Change']:>10,.0f}")
 
-    # Best and worst months
+    # Best and worst months (using filtered averages)
     best_month = monthly_stats['Avg_Pct'].idxmax()
     worst_month = monthly_stats['Avg_Pct'].idxmin()
 
@@ -1007,21 +1106,15 @@ def portfolio_summary(df):
 
     first_date = df['Date'].iloc[0]
     last_date = df['Date'].iloc[-1]
-    first_value = df['Consolidated_portfolio_Value'].iloc[0]
     last_value = df['Consolidated_portfolio_Value'].iloc[-1]
 
     total_months = len(df)
     total_years = total_months / 12
 
-    total_change = last_value - first_value
-
+    # KEEP ONLY THESE 3 LINES:
     print(f"\n  Investment Period:    {first_date.strftime('%b %Y')} to {last_date.strftime('%b %Y')}")
     print(f"  Duration:             {total_months} months ({total_years:.1f} years)")
-    print(f"  Starting Value:       Rs.{first_value:,.2f}")
     print(f"  Current Value:        Rs.{last_value:,.2f}")
-    print(f"  Total Value Change:   Rs.{total_change:,.2f}")
-    print(f"  All-Time High:        Rs.{df['Consolidated_portfolio_Value'].max():,.2f}")
-    print(f"  All-Time Low:         Rs.{df['Consolidated_portfolio_Value'].min():,.2f}")
 
 
 def recovery_analysis(df):
@@ -1136,16 +1229,25 @@ def milestone_tracking_1L(df):
 
     milestones = list(range(100000, max_milestone + 1, 100000))
 
-    print(f"\n{'Milestone':>12} {'Date Reached':<15} {'Note':<20}")
-    print("-" * 50)
+    print(f"\n{'Milestone':>12} {'Date Reached':<15} {'Months Taken':<15} {'Note':<20}")
+    print("-" * 65)
 
     milestone_data = []
     prev_cross_date = None
+    start_date = df['Date'].iloc[0]
 
     for milestone in milestones:
         crossed = df[df['Consolidated_portfolio_Value'] >= milestone]
         if len(crossed) > 0:
             cross_date = crossed['Date'].iloc[0]
+
+            # Calculate months taken from previous milestone (or from start for first milestone)
+            if prev_cross_date is None:
+                # First milestone - calculate from start date
+                months_taken = (cross_date.year - start_date.year) * 12 + (cross_date.month - start_date.month)
+            else:
+                # Subsequent milestones - calculate from previous milestone date
+                months_taken = (cross_date.year - prev_cross_date.year) * 12 + (cross_date.month - prev_cross_date.month)
 
             # Check if same month as previous milestone
             same_month_note = ""
@@ -1155,10 +1257,12 @@ def milestone_tracking_1L(df):
             milestone_data.append({
                 'milestone': milestone,
                 'date': cross_date,
+                'months_taken': months_taken,
                 'same_month': same_month_note
             })
 
-            print(f"Rs.{milestone/100000:>8.0f}L   {cross_date.strftime('%b %Y'):<15} {same_month_note:<20}")
+            months_str = f"{months_taken} month{'s' if months_taken != 1 else ''}"
+            print(f"Rs.{milestone/100000:>8.0f}L   {cross_date.strftime('%b %Y'):<15} {months_str:<15} {same_month_note:<20}")
 
             prev_cross_date = cross_date
         else:
@@ -1175,10 +1279,77 @@ def milestone_tracking_1L(df):
     multi_milestone_months = {k: v for k, v in dates_with_multiple.items() if len(v) > 1}
 
     if multi_milestone_months:
-        print("\n" + "-" * 50)
+        print("\n" + "-" * 65)
         print("MONTHS WITH MULTIPLE MILESTONES:")
         for date_str, milestones_list in multi_milestone_months.items():
             print(f"  {date_str}: Crossed {', '.join(milestones_list)}")
+
+    # Average Speed/Pace Analysis
+    if len(milestone_data) > 0:
+        print("\n" + "-" * 65)
+        print("AVERAGE SPEED / PACE ANALYSIS:")
+        print("-" * 65)
+
+        # Calculate total months from first to last milestone
+        first_milestone_date = milestone_data[0]['date']
+        last_milestone_date = milestone_data[-1]['date']
+        total_months = (last_milestone_date.year - first_milestone_date.year) * 12 + \
+                       (last_milestone_date.month - first_milestone_date.month)
+
+        # Number of lakhs achieved (excluding first if it started at or above 1L)
+        lakhs_achieved = len(milestone_data)
+
+        # Overall average pace
+        if lakhs_achieved > 1 and total_months > 0:
+            avg_pace = total_months / (lakhs_achieved - 1)  # -1 because first milestone doesn't count for "journey"
+            print(f"  Overall Average: {avg_pace:.1f} months per lakh")
+        elif lakhs_achieved == 1:
+            print(f"  Overall Average: First milestone reached, need more data")
+
+        # Fastest and slowest milestones (excluding 0-month jumps for meaningful comparison)
+        non_zero_milestones = [m for m in milestone_data[1:] if m['months_taken'] > 0]  # Skip first milestone
+        if len(non_zero_milestones) > 0:
+            fastest = min(non_zero_milestones, key=lambda x: x['months_taken'])
+            slowest = max(non_zero_milestones, key=lambda x: x['months_taken'])
+            print(f"  Fastest 1L increment: {fastest['months_taken']} month{'s' if fastest['months_taken'] != 1 else ''} (reaching Rs.{fastest['milestone']/100000:.0f}L)")
+            print(f"  Slowest 1L increment: {slowest['months_taken']} month{'s' if slowest['months_taken'] != 1 else ''} (reaching Rs.{slowest['milestone']/100000:.0f}L)")
+
+        # Compare by 5L intervals
+        if lakhs_achieved >= 5:
+            print(f"\n  PACE BY 5L INTERVALS:")
+            intervals = []
+            interval_size = 5
+            
+            for start_lakh in range(1, lakhs_achieved + 1, interval_size):
+                end_lakh = min(start_lakh + interval_size - 1, lakhs_achieved)
+                
+                # Get milestones in this interval (indices are 0-based, so subtract 1)
+                interval_milestones = [m for m in milestone_data[start_lakh-1:end_lakh] if m['months_taken'] > 0]
+                
+                if len(interval_milestones) > 0:
+                    interval_total = sum(m['months_taken'] for m in interval_milestones)
+                    interval_avg = interval_total / len(interval_milestones)
+                    intervals.append({
+                        'range': f"{start_lakh}L-{end_lakh}L",
+                        'avg': interval_avg,
+                        'start': start_lakh,
+                        'end': end_lakh
+                    })
+                    print(f"    {intervals[-1]['range']}: {interval_avg:.1f} months/lakh avg")
+            
+            # Compare first and last interval for acceleration
+            if len(intervals) >= 2:
+                first_avg = intervals[0]['avg']
+                last_avg = intervals[-1]['avg']
+                
+                if last_avg < first_avg and last_avg > 0:
+                    acceleration = ((first_avg - last_avg) / first_avg) * 100
+                    print(f"\n  >> Wealth building ACCELERATING by {acceleration:.0f}%! (Compounding effect)")
+                elif last_avg > first_avg and first_avg > 0:
+                    slowdown = ((last_avg - first_avg) / first_avg) * 100
+                    print(f"\n  >> Pace has slowed by {slowdown:.0f}%")
+
+    return milestone_data  # Return for use by graph function
 
 
 def best_worst_periods(df):
@@ -1291,8 +1462,12 @@ def plot_yoy_month_comparison(df):
     month_order = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
                    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
-    # Calculate stats for each month
-    month_stats = df.groupby('Month')['Percentage_Change'].agg(['mean', 'min', 'max', 'std'])
+    # Filter outliers >50%
+    OUTLIER_THRESHOLD = 50.0
+    df_filtered = df[df['Percentage_Change'] <= OUTLIER_THRESHOLD].copy()
+
+    # Calculate stats for each month (using filtered data)
+    month_stats = df_filtered.groupby('Month')['Percentage_Change'].agg(['mean', 'min', 'max', 'std'])
     month_stats = month_stats.reindex(month_order)
 
     fig, ax = plt.subplots(figsize=(14, 7))
@@ -1312,7 +1487,7 @@ def plot_yoy_month_comparison(df):
     ax.axhline(y=0, color='black', linewidth=0.5)
     ax.set_xticks(x)
     ax.set_xticklabels(month_order)
-    ax.set_title('Year-over-Year Monthly Comparison (Average with Min-Max Range)', fontsize=20, fontweight='bold')
+    ax.set_title('Year-over-Year Monthly Comparison (Outliers >50% Excluded)', fontsize=20, fontweight='bold')
     ax.set_xlabel('Month')
     ax.set_ylabel('Return (%)')
     ax.legend(loc='upper right')
@@ -1325,7 +1500,7 @@ def plot_yoy_month_comparison(df):
                     xytext=(0, 3 if height >= 0 else -12),
                     textcoords="offset points",
                     ha='center', va='bottom' if height >= 0 else 'top',
-                    fontsize=11, fontweight='bold')
+                    fontsize=14, fontweight='bold')
 
     plt.tight_layout()
     plt.savefig(f'{GRAPH_DIR}/10_yoy_month_comparison.png', dpi=300, bbox_inches='tight')

@@ -61,8 +61,10 @@ python insights.py
 ### Text Report Sections
 - Portfolio Summary
 - Year-wise Portfolio Summary
+- Best & Worst Months Per Year
 - Portfolio Milestones (5L increments)
 - Portfolio Milestones (1L increments with same-month tracking)
+- Average Speed / Pace Analysis
 - Portfolio Value Changes Over Time
 - Quarterly Analysis
 - Monthly Seasonality Analysis
@@ -89,6 +91,7 @@ python insights.py
 | `07b_return_distribution_by_year.png` | Box plot by year |
 | `07c_positive_negative_months.png` | Positive vs negative months pie |
 | `08_milestones.png` | Milestone achievement timeline |
+| `08b_milestones_1L.png` | 1 Lakh milestones with time taken |
 | `09_top_months.png` | Top best & worst months |
 | `10_yoy_month_comparison.png` | Year-over-year monthly comparison |
 | `11_recovery_periods.png` | Recovery periods visualization |
